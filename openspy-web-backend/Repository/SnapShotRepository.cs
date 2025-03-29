@@ -83,7 +83,7 @@ namespace CoreWeb.Repository
 
             if(lookup._id != null)
             {
-                searchRequest["_id"] = new BsonObjectId(lookup._id);
+                searchRequest["_id"] = new BsonObjectId(new ObjectId(lookup._id));
             } else {
                 Game game = (await gameRepository.Lookup(lookup.gameLookup)).FirstOrDefault();
                 if(game != null) {
@@ -112,15 +112,15 @@ namespace CoreWeb.Repository
                 }
                 
                 snapshot.ip = result["ip"].AsString;
-                if(result["created"].IsDateTime)
-                    snapshot.created = result["created"].AsDateTime;
+                if(result["created"].IsValidDateTime)
+                    snapshot.created = result["created"].ToUniversalTime();
                 snapshot.updates = new List<SnapshotUpdate>();
                 var updates = result["updates"].AsBsonArray;
 
                 foreach(var update in updates) {
                     var sub_update = new SnapshotUpdate();
-                    if(update["created"].IsDateTime)
-                        sub_update.created = update["created"].AsDateTime;
+                    if(update["created"].IsValidDateTime)
+                        sub_update.created = update["created"].ToUniversalTime();
                     if(update.AsBsonDocument.Contains("profileid")) {
                         sub_update.profileid = update["profileid"].AsInt32;
                     } else {
@@ -173,9 +173,9 @@ namespace CoreWeb.Repository
             var success = result.IsAcknowledged && result.IsModifiedCountAvailable && result.ModifiedCount > 0;
             if(success && snapshotUpdate.completed) {
                 ConnectionFactory factory = connectionFactory.Get();
-                using (IConnection connection = factory.CreateConnection())
+                using (var connection = await factory.CreateConnectionAsync())
                 {
-                    using (IModel channel = connection.CreateModel())
+                    using (var channel = await connection.CreateChannelAsync())
                     {
                         var lookup = new SnapshotLookup();
                         lookup._id = _id;
@@ -183,11 +183,11 @@ namespace CoreWeb.Repository
                         var jsonString =   Newtonsoft.Json.JsonConvert.SerializeObject(fullSnapshot);
                         byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(jsonString);
 
-                        IBasicProperties props = channel.CreateBasicProperties();
+                        var props = new BasicProperties();
                         props.ContentType = "application/json";
                         props.Headers = new Dictionary<string, object>();
                         props.Headers["X-OpenSpy-GameId"] = snapshotUpdate.gameid;
-                        channel.BasicPublish(GSTATS_EXCHANGE, GSTATS_ROUTING_KEY, props, messageBodyBytes);
+                        await channel.BasicPublishAsync(GSTATS_EXCHANGE, GSTATS_ROUTING_KEY, true, props, messageBodyBytes);
                         return true;
                     }
                 }
@@ -199,20 +199,20 @@ namespace CoreWeb.Repository
             Game game = (await gameRepository.Lookup(request.gameLookup)).FirstOrDefault();
 
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     var fullSnapshots = (await Lookup(request));
                     foreach(var snapshot in fullSnapshots) {
                     var jsonString =   Newtonsoft.Json.JsonConvert.SerializeObject(snapshot);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(jsonString);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "application/json";
                     props.Headers = new Dictionary<string, object>();
                     props.Headers["X-OpenSpy-GameId"] = game.Id;
-                    channel.BasicPublish(GSTATS_EXCHANGE, GSTATS_ROUTING_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(GSTATS_EXCHANGE, GSTATS_ROUTING_KEY, true, props, messageBodyBytes);
                     }
                 }
             }

@@ -1,0 +1,5 @@
+.DS_Store
+
+.vs/
+openspy-web-backend/bin/
+openspy-web-backend/obj/

@@ -114,7 +114,7 @@ namespace CoreWeb.Repository
             session.expiresAt = DateTime.Now.Add(model.expiresIn ?? this.defaultTimeSpan);
             session.sessionKey = session_key;
             db.KeyExpire(session_key.ToString(), model.expiresIn ?? this.defaultTimeSpan);
-            SendLoginEvent(session);
+            await SendLoginEventAsync(session);
             return session;
         }
         private String generateSessionKey()
@@ -135,20 +135,20 @@ namespace CoreWeb.Repository
             }
             return md5String;
         }
-        private void SendLoginEvent(Session model)
+        private async Task SendLoginEventAsync(Session model)
         {
             ConnectionFactory factory = mqConnectionFactory.Get();
             //post MQ message with peer app name/addr
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     String message = String.Format("\\type\\auth_event\\app_name\\{0}\\session_key\\{1}\\profileid\\{2}\\userid\\{3}", model.appName, model.sessionKey, model.profile.Id, model.profile.Userid);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(AUTHSESSION_EXCHANGE, AUTHSESSION_ROUTING_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(AUTHSESSION_EXCHANGE, AUTHSESSION_ROUTING_KEY, true, props, messageBodyBytes);
                 }
             }
         }

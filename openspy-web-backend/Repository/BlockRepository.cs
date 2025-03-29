@@ -60,27 +60,27 @@ namespace CoreWeb.Repository
             var num_modified = await gameTrackerDb.SaveChangesAsync();
             return entry.Entity;
         }
-        public void SendAddEvent(Profile from, Profile to)
+        public async Task SendAddEvent(Profile from, Profile to)
         {
-            SendBlockEvent("block_buddy", from, to);
+            await SendBlockEventAsync("block_buddy", from, to);
         }
-        public void SendDeleteEvent(Profile from, Profile to)
+        public async Task SendDeleteEvent(Profile from, Profile to)
         {
-            SendBlockEvent("del_block_buddy", from, to);
+            await SendBlockEventAsync("del_block_buddy", from, to);
         }
-        private void SendBlockEvent(String type,Profile from, Profile to)
+        private async Task SendBlockEventAsync(String type, Profile from, Profile to)
         {
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     String message = String.Format("\\type\\{0}\\from_profileid\\{1}\\to_profileid\\{2}", type, from.Id, to.Id);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(GP_EXCHANGE, GP_BLOCK_ROUTING_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(GP_EXCHANGE, GP_BLOCK_ROUTING_KEY, true, props, messageBodyBytes);
                 }
             }
         }

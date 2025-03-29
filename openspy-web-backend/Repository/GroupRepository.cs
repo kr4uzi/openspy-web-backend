@@ -29,11 +29,9 @@ namespace CoreWeb.Repository
             {
                 var results = await gameMasterDb.Group.Where(b => b.Gameid == lookup.gameid).ToListAsync();
                 return results;
-            } else
-            {
-                return await gameMasterDb.Group.ToListAsync();
             }
-            return null;
+            
+            return await gameMasterDb.Group.ToListAsync();
         }
         public Task<bool> Delete(GroupLookup lookup)
         {

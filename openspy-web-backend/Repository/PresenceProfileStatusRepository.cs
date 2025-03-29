@@ -98,16 +98,16 @@ namespace CoreWeb.Repository
             var redis_hash_key = "status_" + to_profile.Id;
             var db = presenceStatusDatabase.GetDatabase();
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     String message = String.Format("\\type\\status_update\\profileid\\{0}", to_profile.Id);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, true, props, messageBodyBytes);
                 }
             }
             db.KeyDelete(redis_hash_key);
@@ -141,17 +141,17 @@ namespace CoreWeb.Repository
             }
             
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     String message = String.Format("\\type\\status_update\\profileid\\{0}\\status_string\\{1}\\status\\{2}\\location_string\\{3}\\quiet_flags\\{4}\\ip\\{5}\\port\\{6}", profile.Id,
                 status.statusText, status.statusFlags, status.locationText, status.quietFlags, status.IP, status.Port);
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(GP_EXCHANGE, GP_BUDDY_ROUTING_KEY, true, props, messageBodyBytes);
                 }
             }
 

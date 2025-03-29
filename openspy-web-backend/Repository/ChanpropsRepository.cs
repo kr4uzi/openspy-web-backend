@@ -156,7 +156,7 @@ namespace CoreWeb.Repository
             }
             return 0;
         }
-        private void SendUpdatePassword(int channel_id, string current_password, string password) {
+        private async Task SendUpdatePasswordAsync(int channel_id, string current_password, string password) {
             if(string.IsNullOrEmpty(current_password)) {
                 current_password = null;
             }
@@ -166,9 +166,9 @@ namespace CoreWeb.Repository
             }
 
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     string modeString = "";
 
@@ -183,9 +183,9 @@ namespace CoreWeb.Repository
                     String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", channel_id, Convert.ToBase64String(modeStringBytes));
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, true, props, messageBodyBytes);
                 }
             }
         }
@@ -197,7 +197,7 @@ namespace CoreWeb.Repository
         {
             return ((oldFlags & (int)flag) == 0) && ((newFlags & (int)flag) != 0);
         }
-        private void SendUpdateBasicModes(int channel_id, int current_modeflags, int modeflags) {
+        private async Task SendUpdateBasicModesAsync(int channel_id, int current_modeflags, int modeflags) {
             Dictionary<EChannelBasicModes, string> modeMap = new Dictionary<EChannelBasicModes, string>();
             modeMap[EChannelBasicModes.EChannelMode_NoOutsideMessages] = "n";
             modeMap[EChannelBasicModes.EChannelMode_TopicProtect] = "t";
@@ -233,26 +233,26 @@ namespace CoreWeb.Repository
             }
 
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     var modeStringBytes = System.Text.Encoding.UTF8.GetBytes(modeString);
                     String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", channel_id, Convert.ToBase64String(modeStringBytes));
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, true, props, messageBodyBytes);
                 }
             }
         }
-        private void SendUpdateLimit(int channel_id, int current_limit, int limit) {
+        private async Task SendUpdateLimitAsync(int channel_id, int current_limit, int limit) {
             if(current_limit != limit) {
                 ConnectionFactory factory = connectionFactory.Get();
-                using (IConnection connection = factory.CreateConnection())
+                using (var connection = await factory.CreateConnectionAsync())
                 {
-                    using (IModel channel = connection.CreateModel())
+                    using (var channel = await connection.CreateChannelAsync())
                     {
                         string modeString = "";
 
@@ -267,26 +267,26 @@ namespace CoreWeb.Repository
                         String message = String.Format("\\type\\MODE\\toChannelId\\{0}\\message\\{1}\\fromUserId\\-1\\includeSelf\\1", channel_id, Convert.ToBase64String(modeStringBytes));
                         byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                        IBasicProperties props = channel.CreateBasicProperties();
+                        var props = new BasicProperties();
                         props.ContentType = "text/plain";
-                        channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                        await channel.BasicPublishAsync(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, true, props, messageBodyBytes);
                     }
                 }
             }
         }
-        private void SendUpdateTopic(int channel_id, ChanpropsRecord record) {
+        private async Task SendUpdateTopicAsync(int channel_id, ChanpropsRecord record) {
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
                     var modeStringBytes = System.Text.Encoding.UTF8.GetBytes(record.topic);
                     String message = String.Format("\\type\\TOPIC\\toChannelId\\{0}\\message\\{1}\\fromUserSummary\\SERVER!SERVER@0.0.0.0\\includeSelf\\1", channel_id, Convert.ToBase64String(modeStringBytes));
                     byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(message);
 
-                    IBasicProperties props = channel.CreateBasicProperties();
+                    var props = new BasicProperties();
                     props.ContentType = "text/plain";
-                    channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                    await channel.BasicPublishAsync(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, true, props, messageBodyBytes);
                 }
             }
         }
@@ -311,7 +311,7 @@ namespace CoreWeb.Repository
             var key = "channel_" + channel_id;
 
             if(record.kickExisting.HasValue && record.kickExisting.Value == true) {
-                DeleteChannel(channel_id);
+                await DeleteChannelAsync(channel_id);
                 return;
             }
 
@@ -330,7 +330,7 @@ namespace CoreWeb.Repository
                 await db.HashSetAsync(key, "topic_time", setAt);
                 await db.HashSetAsync(key, "topic_user", "SERVER");
                 
-                SendUpdateTopic(channel_id, record);
+                await SendUpdateTopicAsync(channel_id, record);
             }
 
 
@@ -342,7 +342,7 @@ namespace CoreWeb.Repository
             } else {
                 await db.HashDeleteAsync(key, "password");
             }
-            SendUpdatePassword(channel_id, current_password, record.password);
+            await SendUpdatePasswordAsync(channel_id, current_password, record.password);
 
             var current_limit_string = db.HashGet(key, "limit");
             int current_limit = 0;
@@ -355,13 +355,13 @@ namespace CoreWeb.Repository
             } else {
                 await db.HashDeleteAsync(key, "limit");
             }
-            SendUpdateLimit(channel_id, current_limit, record.limit ?? 0);
+            await SendUpdateLimitAsync(channel_id, current_limit, record.limit ?? 0);
 
 
             var current_modeflags_string = db.HashGet(key, "modeflags");
             int current_modeflags = int.Parse(current_modeflags_string);
             await db.HashSetAsync(key, "modeflags", record.modeflags);
-            SendUpdateBasicModes(channel_id, current_modeflags, record.modeflags);
+            await SendUpdateBasicModesAsync(channel_id, current_modeflags, record.modeflags);
             await db.HashSetAsync(key, "entrymsg", record.entrymsg);            
 
             if(!string.IsNullOrEmpty(record.groupname)) {
@@ -387,15 +387,15 @@ namespace CoreWeb.Repository
                 cursor = (IScanningCursor)entries;
             } while ((cursor?.Cursor ?? 0) != 0);
         }
-        private void DeleteChannel(int channel_id) {
+        private async Task DeleteChannelAsync(int channel_id) {
             var db = peerChatCacheDb.GetDatabase();
             var channel_prefix = "channel_" + channel_id;
             var channel_name = db.StringGet("channelname_" + channel_id);
             db.HashSet(channel_prefix, "modeflags", (int)EChannelBasicModes.EChannelMode_InviteOnly); //set invite flag, so no one can join
             ConnectionFactory factory = connectionFactory.Get();
-            using (IConnection connection = factory.CreateConnection())
+            using (var connection = await factory.CreateConnectionAsync())
             {
-                using (IModel channel = connection.CreateModel())
+                using (var channel = await connection.CreateChannelAsync())
                 {
 
 
@@ -411,16 +411,16 @@ namespace CoreWeb.Repository
                             string chanmodeflags_update = string.Format("\\type\\UPDATE_USER_CHANMODEFLAGS\\to\\{0}\\user_id\\{1}\\modeflags\\0", channel_id, id);
                             byte[] messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(chanmodeflags_update);
 
-                            IBasicProperties props = channel.CreateBasicProperties();
+                            var props = new BasicProperties();
                             props.ContentType = "text/plain";
-                            channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCHAT_KEYUPDATE_KEY, props, messageBodyBytes);
+                            await channel.BasicPublishAsync(PEERCHAT_EXCHANGE, PEERCHAT_KEYUPDATE_KEY, true, props, messageBodyBytes);
 
 
                             var kick_message = System.Text.Encoding.UTF8.GetBytes("Channel Reset");
                             
                             string kick_event_message = string.Format("\\type\\KICK\\toChannelId\\{0}\\fromUserSummary\\{1}\\toUserId\\{2}\\message\\{3}", channel_id, "SERVER!SERVER@0.0.0.0", id, Convert.ToBase64String(kick_message));
                             messageBodyBytes = System.Text.Encoding.UTF8.GetBytes(kick_event_message);
-                            channel.BasicPublish(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, props, messageBodyBytes);
+                            await channel.BasicPublishAsync(PEERCHAT_EXCHANGE, PEERCAHT_CLIENT_MESSAGE_KEY, true, props, messageBodyBytes);
                         }
 
                         cursor = (IScanningCursor)entries;

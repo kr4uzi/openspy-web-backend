@@ -44,7 +44,7 @@ namespace CoreWeb.Controllers.Presence
             block.FromProfileid = from_profile.Id;
             block.ToProfileid = to_profile.Id;
             await blockRepository.Create(block);
-            blockRepository.SendAddEvent(from_profile, to_profile);
+            await blockRepository.SendAddEvent(from_profile, to_profile);
         }
 
         [HttpDelete("Buddy")]
@@ -75,7 +75,7 @@ namespace CoreWeb.Controllers.Presence
 
             if (success)
             {
-                buddyRepository.SendDeleteEvent(from_profile, to_profile);
+                await buddyRepository.SendDeleteEventAsync(from_profile, to_profile);
             }
             return success;
         }
@@ -87,7 +87,7 @@ namespace CoreWeb.Controllers.Presence
             {
                 var from_profile = (await profileRepository.Lookup(lookupData.SourceProfile)).First();
                 var to_profile = (await profileRepository.Lookup(lookupData.TargetProfile)).First();
-                blockRepository.SendDeleteEvent(from_profile, to_profile);
+                await blockRepository.SendDeleteEvent(from_profile, to_profile);
                 
             }
             return delete_status;

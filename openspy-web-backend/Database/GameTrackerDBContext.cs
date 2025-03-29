@@ -41,10 +41,10 @@ namespace CoreWeb.Database
                 entity.ToTable("blocks");
 
                 entity.HasIndex(e => e.FromProfileid)
-                    .HasName("fk_blocks_from_profileid");
+                    .HasDatabaseName("fk_blocks_from_profileid");
 
                 entity.HasIndex(e => e.ToProfileid)
-                    .HasName("fk_blocks_to_profileid");
+                    .HasDatabaseName("fk_blocks_to_profileid");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -74,10 +74,10 @@ namespace CoreWeb.Database
                 entity.ToTable("buddies");
 
                 entity.HasIndex(e => e.FromProfileid)
-                    .HasName("fk_buddies_from_profileid");
+                    .HasDatabaseName("fk_buddies_from_profileid");
 
                 entity.HasIndex(e => e.ToProfileid)
-                    .HasName("fk_buddies_to_profileid");
+                    .HasDatabaseName("fk_buddies_to_profileid");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -107,7 +107,7 @@ namespace CoreWeb.Database
                 entity.ToTable("persist_data");
 
                 entity.HasIndex(e => e.Profileid)
-                    .HasName("fk_pd_profile");
+                    .HasDatabaseName("fk_pd_profile");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -148,7 +148,7 @@ namespace CoreWeb.Database
                 entity.ToTable("persist_keyed_data");
 
                 entity.HasIndex(e => e.Profileid)
-                    .HasName("fk_pkd_profile");
+                    .HasDatabaseName("fk_pkd_profile");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")
@@ -192,7 +192,7 @@ namespace CoreWeb.Database
                 entity.ToTable("profiles");
 
                 entity.HasIndex(e => e.Userid)
-                    .HasName("fk_user");
+                    .HasDatabaseName("fk_user");
 
                 entity.Property(e => e.Id)
                     .HasColumnName("id")

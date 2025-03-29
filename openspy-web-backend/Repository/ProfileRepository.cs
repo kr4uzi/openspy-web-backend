@@ -12,7 +12,7 @@ namespace CoreWeb.Repository
 {
     public class ProfileRepository : IRepository<Profile, ProfileLookup>
     {
-        private readonly int NAMESPACEID_GAMESPY = 1;
+        //private readonly int NAMESPACEID_GAMESPY = 1;
         private readonly int NAMESPACEID_IGN = 15;
         private GameTrackerDBContext gameTrackerDb;
         private IRepository<User, UserLookup> userRepository;

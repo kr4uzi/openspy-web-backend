@@ -14,8 +14,8 @@ namespace CoreWeb.Authentication
     public class ApiKeyAuthHandler : AuthenticationHandler<ApiKeyAuthOpts>
     {
         private APIKeyProvider apiKeyProvider;
-        public ApiKeyAuthHandler(IOptionsMonitor<ApiKeyAuthOpts> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, APIKeyProvider apiKeyProvider)
-                : base(options, logger, encoder, clock)
+        public ApiKeyAuthHandler(IOptionsMonitor<ApiKeyAuthOpts> options, ILoggerFactory logger, UrlEncoder encoder, APIKeyProvider apiKeyProvider)
+                : base(options, logger, encoder)
         {
             this.apiKeyProvider = apiKeyProvider;
         }
@@ -49,7 +49,7 @@ namespace CoreWeb.Authentication
                     var ticket = new AuthenticationTicket(principal, new AuthenticationProperties(), Scheme.Name);
                     return AuthenticateResult.Success(ticket);
                 }
-                 catch(System.Exception e)
+                catch(System.Exception)
                 {
                     return AuthenticateResult.Fail("Invalid APIKey");
                 }

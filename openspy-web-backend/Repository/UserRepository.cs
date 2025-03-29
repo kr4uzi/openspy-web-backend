@@ -11,9 +11,9 @@ namespace CoreWeb.Repository
     public class UserRepository : IRepository<User, UserLookup>
     {
         private const int REDIS_SESSION_DB = 3;
-        private readonly int PARTNERID_GAMESPY = 0;
-        private readonly int PARTNERID_IGN = 10;
-        private readonly int PARTNERID_EA = 20;
+        //private readonly int PARTNERID_GAMESPY = 0;
+        //private readonly int PARTNERID_IGN = 10;
+        //private readonly int PARTNERID_EA = 20;
         private GameTrackerDBContext gameTrackerDb;
         private SessionCacheDatabase sessionCache;
         public UserRepository(GameTrackerDBContext gameTrackerDb, SessionCacheDatabase sessionCache)

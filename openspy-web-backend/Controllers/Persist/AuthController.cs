@@ -201,7 +201,8 @@ namespace CoreWeb.Controllers.Persist
                     throw new AuthInvalidCredentialsException();
                 }
                 return response;
-            } catch(AuthInvalidCredentialsException e) {
+            } catch (AuthInvalidCredentialsException)
+            {
                 var profile = (await profileRepository.Lookup(new ProfileLookup {id = configuration.GetValue<int>("PersistCdKeyAuthFallbackProfile")})).FirstOrDefault();
                 response.profile = profile;
                 var userLookup = new UserLookup();

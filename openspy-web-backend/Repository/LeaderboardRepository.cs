@@ -135,12 +135,9 @@ namespace CoreWeb.Repository
             sliceItems.Add(new BsonInt32(lookup.pageOffset.Value));
             sliceItems.Add(new BsonInt32(lookup.pageSize.Value));
             var dataItems = new BsonDocument
-            (
-                new BsonDocument
-                {
-                    new BsonDocument("$slice", sliceItems)
-                }
-            );
+            {
+                { "$slice", sliceItems }
+            };
 
             return dataItems;
         }
